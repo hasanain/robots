@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:robots/game_state.dart';
-import 'dart:math';
+import 'game_state.dart';
 import 'coord.dart';
 import 'direction.dart';
 import './theme.dart';
@@ -38,12 +37,6 @@ int height = 22;
 int width = 44;
 
 class _RobotsGameState extends State<RobotsGame> {
-  int score = 0;
-  var human = Coord.origin();
-  List<Coord> robots = [];
-  List<Coord> junk = [];
-  bool gameOver = false;
-  var level = 1;
   GameState gameState = GameState(gridHeight: height, gridWidth: width);
 
   @override
@@ -54,7 +47,7 @@ class _RobotsGameState extends State<RobotsGame> {
 
   void _takeTurn(Direction d) {
     setState(() {
-      if (!gameOver) {
+      if (!gameState.gameOver) {
         _moveHuman(d);
         _runTurn();
       }
@@ -69,80 +62,41 @@ class _RobotsGameState extends State<RobotsGame> {
   }
 
   void _calculateLevelOver() {
-    if (robots.isEmpty) {
-      _newGame(level + 1, score);
+    if (gameState.robots.isEmpty) {
+      _newGame(gameState.level + 1, gameState.score);
     }
   }
 
   void _newGame(int newLevel, int newScore) {
     setState(() {
-      var state = gameState.fromExisting(
+      gameState = gameState.fromExisting(
           score: newScore,
           human: Coord.getRandom(height, width),
           gameOver: false,
           level: newLevel,
           junk: []).placeRandomRobots(10);
-      score = state.score;
-      human = state.human;
-      robots = state.robots;
-      gameOver = state.gameOver;
-      level = state.level;
-      junk = state.junk;
-      gameState = state;
     });
   }
 
   void _teleportHuman() {
     setState(() {
-      if (!gameOver) {
-        human = Coord.getRandom(height, width);
+      if (!gameState.gameOver) {
+        gameState = gameState.takeTeleportTurn();
         _runTurn();
       }
     });
   }
 
   void _moveHuman(Direction d) {
-    GameState state = gameState.fromExisting(human: human, score: score);
-    GameState newState = state.takeMoveTurn(d);
-    human = newState.human;
-    score = newState.score;
-    gameState = newState;
-  }
-
-  Coord _moveRobot(Coord robot) {
-    var humanRow = human.r();
-    var humanCol = human.c();
-    var newCol = robot.c();
-    var newRow = robot.r();
-
-    if (humanCol > robot.c()) {
-      newCol += 1;
-    } else if (humanCol < robot.c()) {
-      newCol -= 1;
-    }
-
-    if (humanRow > robot.r()) {
-      newRow += 1;
-    } else if (humanRow < robot.r()) {
-      newRow -= 1;
-    }
-
-    return Coord(newRow, newCol);
+    gameState = gameState.takeMoveTurn(d);
   }
 
   void _moveRobots() {
-    robots = robots.map((r) => _moveRobot(r)).toList();
+    gameState = gameState.chaseHuman();
   }
 
   void _calculateCollisions() {
-    GameState state = gameState.fromExisting(
-        robots: robots, junk: junk, human: human, gameOver: gameOver);
-
-    GameState newState = state.calculateCollisions();
-    robots = newState.robots;
-    junk = newState.junk;
-    gameOver = newState.gameOver;
-    gameState = newState;
+    gameState = gameState.calculateCollisions();
   }
 
   @override
@@ -163,26 +117,29 @@ class _RobotsGameState extends State<RobotsGame> {
   }
 
   Widget _buildGridItem(int r, int c) {
-    if (gameOver && human.samePositionAs(r, c)) {
+    if (gameState.gameOver && gameState.human.samePositionAs(r, c)) {
       return Center(
           child: Text(
         GameTheme.human,
         style: const TextStyle(color: Colors.red),
       ));
     }
-    if (junk.contains(Coord(r, c))) {
+    if (gameState.junk.contains(Coord(r, c))) {
       return Center(child: Text(GameTheme.junk));
     }
-    if (robots.contains(Coord(r, c))) {
+    if (gameState.robots.contains(Coord(r, c))) {
       return Center(child: Text(GameTheme.robot));
     }
-    if (human.samePositionAs(r, c)) {
+    if (gameState.human.samePositionAs(r, c)) {
       return Center(child: Text(GameTheme.human));
     }
     return const Center(child: Text(''));
   }
 
   Widget _buildGameBody() {
+    var level = gameState.level,
+        gameOver = gameState.gameOver,
+        score = gameState.score;
     return Column(children: <Widget>[
       Row(
         children: [
@@ -275,17 +232,7 @@ class _RobotsGameState extends State<RobotsGame> {
   }
 
   void _spawnJunk() {
-    var rng = Random();
-    if (rng.nextInt(10) > 6) {
-      var set = false;
-      while (!set) {
-        var junkLocation = Coord.getRandom(height, width);
-        if (human != junkLocation && !robots.contains(junkLocation)) {
-          junk.add(junkLocation);
-          set = true;
-        }
-      }
-    }
+    gameState = gameState.spawnJunk();
   }
 
   void _safeTeleport() {}

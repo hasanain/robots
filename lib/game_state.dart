@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'coord.dart';
 import 'direction.dart';
 
@@ -120,6 +122,54 @@ class GameState {
 
   GameState takeMoveTurn(Direction d) {
     return fromExisting(score: score + 1).moveHuman(d);
+  }
+
+  GameState takeTeleportTurn() {
+    return fromExisting(human: Coord.getRandom(gridHeight, gridWidth));
+  }
+
+  Coord _chaseWithOneRobot(Coord robot) {
+    {
+      var humanRow = human.r();
+      var humanCol = human.c();
+      var newCol = robot.c();
+      var newRow = robot.r();
+
+      if (humanCol > robot.c()) {
+        newCol += 1;
+      } else if (humanCol < robot.c()) {
+        newCol -= 1;
+      }
+
+      if (humanRow > robot.r()) {
+        newRow += 1;
+      } else if (humanRow < robot.r()) {
+        newRow -= 1;
+      }
+
+      return Coord(newRow, newCol);
+    }
+  }
+
+  GameState chaseHuman() {
+    List<Coord> newRobots = robots.map((r) => _chaseWithOneRobot(r)).toList();
+    return fromExisting(robots: newRobots);
+  }
+
+  GameState spawnJunk() {
+    var rng = Random();
+    List<Coord> newJunk = junk.map((e) => e).toList();
+    if (rng.nextInt(10) > 8) {
+      var set = false;
+      while (!set) {
+        var junkLocation = Coord.getRandom(gridWidth, gridHeight);
+        if (human != junkLocation && !robots.contains(junkLocation)) {
+          newJunk.add(junkLocation);
+          set = true;
+        }
+      }
+    }
+    return fromExisting(junk: newJunk);
   }
 
   GameState placeRandomRobots(int amount) {
