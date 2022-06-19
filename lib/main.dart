@@ -67,6 +67,10 @@ class _RobotsGameState extends State<RobotsGame> {
     }
   }
 
+  void _spawnJunk() {
+    gameState = gameState.spawnJunk();
+  }
+
   void _newGame(int newLevel, int newScore) {
     setState(() {
       gameState = gameState.fromExisting(
@@ -84,6 +88,13 @@ class _RobotsGameState extends State<RobotsGame> {
         gameState = gameState.takeTeleportTurn();
         _runTurn();
       }
+    });
+  }
+
+  void _safeTeleport() {
+    setState(() {
+      gameState = gameState.safeTeleport();
+      _runTurn();
     });
   }
 
@@ -230,10 +241,4 @@ class _RobotsGameState extends State<RobotsGame> {
           ))
     ]);
   }
-
-  void _spawnJunk() {
-    gameState = gameState.spawnJunk();
-  }
-
-  void _safeTeleport() {}
 }

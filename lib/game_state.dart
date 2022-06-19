@@ -185,4 +185,49 @@ class GameState {
     }
     return fromExisting(robots: robots);
   }
+
+  Coord _getSafeRandomCoord() {
+    var candidate = Coord.getRandom(gridHeight, gridWidth);
+    var safe = true;
+    do {
+      safe = true;
+      var normalizedCandidate =
+          Coord(max(candidate.r() - 2, 0), max(candidate.c() - 2, 0));
+      for (var i = normalizedCandidate.r();
+          i < normalizedCandidate.r() + 5;
+          i++) {
+        for (var j = normalizedCandidate.c();
+            j < normalizedCandidate.c() + 5;
+            j++) {
+          for (var k = 0; k < robots.length; k++) {
+            if (robots[k] == Coord(i, j)) {
+              safe = false;
+              candidate = Coord.getRandom(gridHeight, gridWidth);
+              break;
+            }
+          }
+          if (!safe) {
+            break;
+          }
+        }
+        if (!safe) {
+          break;
+        }
+      }
+      if (safe) {
+        for (var i = 0; i < junk.length; i++) {
+          if (junk[i] == candidate) {
+            safe = false;
+            candidate = Coord.getRandom(gridHeight, gridWidth);
+            break;
+          }
+        }
+      }
+    } while (!safe);
+    return candidate;
+  }
+
+  GameState safeTeleport() {
+    return fromExisting(human: _getSafeRandomCoord());
+  }
 }
