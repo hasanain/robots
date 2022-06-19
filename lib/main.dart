@@ -73,12 +73,11 @@ class _RobotsGameState extends State<RobotsGame> {
 
   void _newGame(int newLevel, int newScore) {
     setState(() {
-      gameState = gameState.fromExisting(
-          score: newScore,
-          human: Coord.getRandom(height, width),
-          gameOver: false,
-          level: newLevel,
-          junk: []).placeRandomRobots(10);
+      gameState = gameState
+          .fromExisting(
+              score: newScore, gameOver: false, level: newLevel, junk: [])
+          .placeRandomRobots(10)
+          .placeHuman();
     });
   }
 

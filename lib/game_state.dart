@@ -186,6 +186,10 @@ class GameState {
     return fromExisting(robots: robots);
   }
 
+  GameState placeHuman() {
+    return fromExisting(human: _getSafeRandomCoord());
+  }
+
   Coord _getSafeRandomCoord() {
     var candidate = Coord.getRandom(gridHeight, gridWidth);
     var safe = true;
